@@ -1,0 +1,26 @@
+pipeline {
+    agent any
+    stages {
+        stage ('Initialize') {
+            steps {
+                    echo "MAVEN_HOME = ${MAVEN_HOME}"
+                    git 'https://github.com/fethi-lamraoui/jenkins.git'
+                    git branch: 'branch1', changelog: false, credentialsId: 'af4ff4d1-2f33-4cab-b7f4-ed2bb4966363', url: 'https://github.com/fethi-lamraoui/jenkins.git'
+                    git branch: 'branch2', changelog: false, credentialsId: 'af4ff4d1-2f33-4cab-b7f4-ed2bb4966363', url: 'https://github.com/fethi-lamraoui/jenkins.git'
+            }
+        }
+
+        stage ('Build') {
+            steps {
+                echo "Starting build!"
+                bat "mvn clean install"
+            }
+            post {
+                success {
+                    echo "Starting tests!"
+                    junit 'target/surefire-reports/**/*.xml' 
+                }
+            }
+        }
+    }
+}
