@@ -1,26 +1,88 @@
 pipeline {
     agent any
+	
     stages {
-        stage ('Initialize') {
-            steps {
-                    echo "MAVEN_HOME = ${MAVEN_HOME}"
-                    git 'https://github.com/fethi-lamraoui/jenkins.git'
-                    git branch: 'branch1', changelog: false, credentialsId: 'af4ff4d1-2f33-4cab-b7f4-ed2bb4966363', url: 'https://github.com/fethi-lamraoui/jenkins.git'
-                    git branch: 'branch2', changelog: false, credentialsId: 'af4ff4d1-2f33-4cab-b7f4-ed2bb4966363', url: 'https://github.com/fethi-lamraoui/jenkins.git'
-            }
-        }
+	
+		stage('merging branch1') {
+			steps {
+				
+				withCredentials([
+					[$class: 'UsernamePasswordMultiBinding', credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS'],
+				]){
+			
+					bat(/git config --global user.email "fethi154@hotmail.com"/)
+					bat(/git config --global user.name "Fethi Lamraoui"/)
+					git url: "https://${GIT_USER}:${GIT_PASS}@github.com/fethi-lamraoui/jenkins.git", credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', branch: 'branch1'
+					git url: "https://${GIT_USER}:${GIT_PASS}@github.com/fethi-lamraoui/jenkins.git", credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', branch: 'master'
+					bat(/git merge branch1/)
+					bat(/git push origin master/)
 
-        stage ('Build') {
-            steps {
-                echo "Starting build!"
-                bat "mvn clean install"
-            }
-            post {
-                success {
-                    echo "Starting tests!"
-                    junit 'target/surefire-reports/**/*.xml' 
-                }
-            }
+				}
+			}
+		}
+		
+		stage('merging branch2') {
+			steps {
+			
+				withCredentials([
+					[$class: 'UsernamePasswordMultiBinding', credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS'],
+				]){
+			
+					bat(/git config --global user.email "fethi154@hotmail.com"/)
+					bat(/git config --global user.name "Fethi Lamraoui"/)
+					git url: "https://${GIT_USER}:${GIT_PASS}@github.com/fethi-lamraoui/jenkins.git", credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', branch: 'branch2'
+					git url: "https://${GIT_USER}:${GIT_PASS}@github.com/fethi-lamraoui/jenkins.git", credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', branch: 'master'
+					bat(/git merge branch2/)
+					bat(/git push origin master/)
+				
+				}
+			}
+		}
+		
+		stage('build') {
+			steps {
+				echo 'Building... !'
+				bat(/mvn clean package/)
+				
+				post {
+					success {
+						junit 'target/surefire-reports/**/*.xml' 
+					}
+				}
+			}
+		}
+		stage('Deploy') {
+			steps {
+				echo 'Deploying... !'
+			}
+		}
+    }
+    post {
+        always {
+            echo 'I have finished'
+        }
+        success {
+            echo 'I succeeded!'
+        }
+        unstable {
+            echo 'I am unstable :/'
+        }
+        failure {
+            echo 'build failure, pushing merged filed to main branch'
+			
+			withCredentials([
+					[$class: 'UsernamePasswordMultiBinding', credentialsId: 'eefbf768-6bad-4d2b-9a0b-d0bf7f1d3e0d', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS'],
+				]){
+				
+				bat(/git --version/)
+				bat(/git add ./)
+				bat(/git commit -am "build failure"/)
+				bat(/git push origin master/)
+				
+			}
+        }
+        changed {
+            echo 'Things are different...'
         }
     }
 }
