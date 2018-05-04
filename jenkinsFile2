@@ -1,0 +1,97 @@
+pipeline {
+    agent any
+	
+    stages {
+	
+        stage ('Merging branch1') {
+            steps {
+				
+				bat(/git config --global user.email "fethi154@hotmail.com"/)
+				bat(/git config --global user.name "Fethi Lamraoui"/)
+				
+				checkout changelog: false, 
+				poll: false, 
+				scm: [
+					$class: 'GitSCM', 
+					branches: [[name: 'refs/remotes/origin/branch1']], 
+					doGenerateSubmoduleConfigurations: false, 
+					extensions: [
+						[
+							$class: 'WipeWorkspace'
+						],
+						[
+							$class: 'LocalBranch', 
+							localBranch: 'master'
+						],
+						[
+							$class: 'PreBuildMerge', 
+							options: [fastForwardMode: 'FF', 
+							mergeRemote: 'origin', 
+							mergeStrategy: 'MergeCommand.Strategy', 
+							mergeTarget: 'master']
+						]
+					], 
+					submoduleCfg: [],
+					userRemoteConfigs: [
+						[
+							credentialsId: 'ad638748-6fba-480a-a1e5-a8ed908f2c2b',
+							url: 'git@github.com:fethi-lamraoui/jenkins.git'
+						]
+					]
+				]
+								
+            }
+        }
+		
+		stage ('Merging branch2') {
+            steps {
+				
+				bat(/git config --global user.email "fethi154@hotmail.com"/)
+				bat(/git config --global user.name "Fethi Lamraoui"/)
+				
+				checkout changelog: false, 
+				poll: false, 
+				scm: [
+					$class: 'GitSCM', 
+					branches: [[name: 'refs/remotes/origin/branch2']], 
+					doGenerateSubmoduleConfigurations: false, 
+					extensions: [
+						[
+							$class: 'WipeWorkspace'
+						],
+						[
+							$class: 'LocalBranch', 
+							localBranch: 'master'
+						],
+						[
+							$class: 'PreBuildMerge', 
+							options: [fastForwardMode: 'FF', 
+							mergeRemote: '', 
+							mergeStrategy: 'MergeCommand.Strategy', 
+							mergeTarget: 'master']
+						]
+					], 
+					submoduleCfg: [],
+					userRemoteConfigs: [
+						[
+							credentialsId: 'ad638748-6fba-480a-a1e5-a8ed908f2c2b',
+							url: 'git@github.com:fethi-lamraoui/jenkins.git'
+						]
+					]
+				]
+								
+            }
+        }
+		
+        stage ('Build') {
+            steps {
+				bat(/mvn clean package/)
+            }
+            post {
+                success {
+                    junit 'target/surefire-reports/**/*.xml' 
+                }
+            }
+        }
+    }
+}
